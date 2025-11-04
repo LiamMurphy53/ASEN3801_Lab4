@@ -9,6 +9,10 @@ time = data.rt_estim.time(:);
 aircraft_state_array = data.rt_estim.signals.values';
 
 motorForces = data.rt_motor.signals.values;
+
+function PlotAircraftSim(time, aircraft_state_array, motorForces)
+
+
 km = 0.0024;
 d = 0.06;
 inertMatrix = [-1, -1, -1, -1;
@@ -22,9 +26,7 @@ fig = [1, 2, 3, 4, 5, 6];
 
 col = '-b';
 
-PlotAircraftSim(time, aircraft_state_array, control_input_array, fig, col);
 
-function PlotAircraftSim(time, aircraft_state_array, control_input_array,fig, col)
     figure(fig(1));
     subplot(3,1,1);
     plot(time, aircraft_state_array(1,:), col); hold on;
@@ -133,3 +135,5 @@ function PlotAircraftSim(time, aircraft_state_array, control_input_array,fig, co
     axis equal;
     view(3);
 end
+
+PlotAircraftSim(time, aircraft_state_array, motorForces);
