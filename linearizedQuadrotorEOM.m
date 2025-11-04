@@ -22,10 +22,6 @@ dFx = deltaFc(1);
 dFy = deltaFc(2);
 dFz = deltaFc(3);
 
-dL  = deltaGc(1);
-dM  = deltaGc(2);
-dN  = deltaGc(3);
-
 
 var_dot = zeros(12,1);
 
