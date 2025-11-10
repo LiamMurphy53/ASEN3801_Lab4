@@ -17,6 +17,8 @@ run_142 = 0;
 %part 3:
 %3.3
 run_33 = 0;
+%3.4
+run_34 = 0;
 
 %% constants
 const = struct();
@@ -148,46 +150,86 @@ end
 
 % 3.3
 if(run_33)
-    statevector_trim = [10, 10, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    statevector_trim = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     tspan = [0, 10]; %seconds
     %a
     name = " a ";
     delta_phi = 5*(pi/180); %rad
-    statevector_0 = [10, 10, 10, delta_phi+statevector_trim(6), 0, 0, 0, 0, 0, 0, 0, 0];
+    statevector_0 = [0, 0, 0, delta_phi+statevector_trim(6), 0, 0, 0, 0, 0, 0, 0, 0];
     
     [t, statevector_linear] = ode45(@(t,statevector_linear) QuadrotorEOMLinear(t,statevector_linear, const, statevector_trim),tspan,statevector_0);
 
-    plotState(t, statevector_linear, name);
+    plotState(t, statevector_linear, name, const);
 
     %b
     name = " b ";
     delta_theta = 5*(pi/180); %rad
-    statevector_0 = [10, 10, 10, 0, delta_theta+statevector_trim(7), 0, 0, 0, 0, 0, 0, 0];
+    statevector_0 = [0, 0, 0, 0, delta_theta+statevector_trim(7), 0, 0, 0, 0, 0, 0, 0];
     
     [t, statevector_linear] = ode45(@(t,statevector_linear) QuadrotorEOMLinear(t,statevector_linear, const, statevector_trim),tspan,statevector_0);
 
-    plotState(t, statevector_linear, name);
+    plotState(t, statevector_linear, name, const);
 
     %c
     name = " c ";
     delta_p = 0.1; %rad/sec
-    statevector_0 = [10, 10, 10, 0, 0, 0, 0, 0, 0, delta_p+statevector_trim(10), 0, 0];
+    statevector_0 = [0, 0, 0, 0, 0, 0, 0, 0, 0, delta_p+statevector_trim(10), 0, 0];
     
     [t, statevector_linear] = ode45(@(t,statevector_linear) QuadrotorEOMLinear(t,statevector_linear, const, statevector_trim),tspan,statevector_0);
 
-    plotState(t, statevector_linear, name);
+    plotState(t, statevector_linear, name, const);
 
     %d 
     name = " d ";
     delta_q = 0.1; %rad/sec
-    statevector_0 = [10, 10, 10, 0, 0, 0, 0, 0, 0, 0, delta_q+statevector_trim(11), 0];
+    statevector_0 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, delta_q+statevector_trim(11), 0];
     
     [t, statevector_linear] = ode45(@(t,statevector_linear) QuadrotorEOMLinear(t,statevector_linear, const, statevector_trim),tspan,statevector_0);
 
-    plotState(t, statevector_linear, name);
+    plotState(t, statevector_linear, name, const);
 end
 
+%3.4
+if(run_34)
+    statevector_trim = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    tspan = [0, 10]; %seconds
 
+    %a
+    name = " a ";
+    delta_phi = 5*(pi/180); %rad
+    statevector_0 = [0, 0, 0, delta_phi+statevector_trim(6), 0, 0, 0, 0, 0, 0, 0, 0];
+    
+    [t, statevector] = ode45(@(t,statevector) QuadrotorEOMControl(t,statevector, const, statevector_trim),tspan,statevector_0);
+
+    plotState(t, statevector, name, const);
+
+    %b
+    name = " b ";
+    delta_theta = 5*(pi/180); %rad
+    statevector_0 = [0, 0, 0, 0, delta_theta+statevector_trim(7), 0, 0, 0, 0, 0, 0, 0];
+    
+    [t, statevector] = ode45(@(t,statevector) QuadrotorEOMControl(t,statevector, const, statevector_trim),tspan,statevector_0);
+
+    plotState(t, statevector, name, const);
+
+    %c
+    name = " c ";
+    delta_p = 0.1; %rad/sec
+    statevector_0 = [0, 0, 0, 0, 0, 0, 0, 0, 0, delta_p+statevector_trim(10), 0, 0];
+    
+    [t, statevector] = ode45(@(t,statevector) QuadrotorEOMControl(t,statevector, const, statevector_trim),tspan,statevector_0);
+
+    plotState(t, statevector, name, const);
+
+    %d 
+    name = " d ";
+    delta_q = 0.1; %rad/sec
+    statevector_0 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, delta_q+statevector_trim(11), 0];
+    
+    [t, statevector] = ode45(@(t,statevector) QuadrotorEOMControl(t,statevector, const, statevector_trim),tspan,statevector_0);
+
+    plotState(t, statevector, name, const);
+end
 
 
 %% Functions
@@ -302,7 +344,7 @@ function PlotAircraftSim(time, aircraft_state_array, control_input_array,fig, co
     view(3);
 end
 
-function plotState(time, state, name)
+function plotState(time, state, name, const)
     
     col = '-b';
 
@@ -373,6 +415,41 @@ function plotState(time, state, name)
     xlabel('Time (s)');
     ylabel('Rad/s');
     title("Yaw Rate--part: " + name);
+
+
+    Fc_vector = zeros(length(state),1);
+    Gc_vector = zeros(length(state),3);
+    for(i = 1:length(state))
+        [Fc_v, Gc] = InnerLoopFeedback(state(i,:), const);
+        Fc_vector(i) = Fc_v(3);
+        Gc_vector(i,1) = Gc(1);
+        Gc_vector(i,2) = Gc(2);
+        Gc_vector(i,3) = Gc(3);
+
+    end
+
+
+    figure();
+    subplot(4,1,1);
+    plot(time, Fc_vector, col); hold on;
+    xlabel('Time (s)');
+    ylabel('Newtons');
+    title("Vertical Thrust--part: " + name);
+    subplot(4,1,2);
+    plot(time, Gc_vector(:, 1), col); hold on;
+    xlabel('Time (s)');
+    ylabel('N*m');
+    title("Roll Moment--part: " + name);
+    subplot(4,1,3);
+    plot(time, Gc_vector(:, 2), col); hold on;
+    xlabel('Time (s)');
+    ylabel('N*m');
+    title("Pitch Moment--part: " + name);
+    subplot(4,1,4);
+    plot(time, Gc_vector(:, 3), col); hold on;
+    xlabel('Time (s)');
+    ylabel('N*m');
+    title("Yaw Moment--part: " + name);
 
 end
 
@@ -516,3 +593,20 @@ function var_dot_linear = QuadrotorEOMLinear(t, var, const, state_0)
 
     var_dot_linear = [pos_dot(1); pos_dot(2); pos_dot(3); e_dot(1); e_dot(2); e_dot(3); v_dot(1); v_dot(2); v_dot(3); omega_dot(1); omega_dot(2); omega_dot(3)];
 end
+
+function var_dot_control = QuadrotorEOMControl(t, var, const, motor_forces)
+
+    [Fc, Gc] = InnerLoopFeedback(var,const);
+    
+    A = [ -1, -1, -1, -1;
+    -const.d/sqrt(2), -const.d/sqrt(2), const.d/sqrt(2), const.d/sqrt(2);
+    const.d/sqrt(2), -const.d/sqrt(2), -const.d/sqrt(2), const.d/sqrt(2);
+    const.km, -const.km, const.km, -const.km];
+    
+    control = [Fc(3); Gc];
+    motor_forces = A \ control;
+
+
+    var_dot_control = QuadrotorEOM(t, var, const, motor_forces');
+end
+
