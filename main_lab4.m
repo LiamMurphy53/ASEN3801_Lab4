@@ -58,6 +58,20 @@ if(run_141)
     f = (const.m * const.g * cos(theta) - 25 * const.nu * sin(theta))/ 4; % N
     motor_forces = [f, f, f, f];
     statevector_0 = [0, 0, 0, 5*cos(theta), 0, 5*sin(theta), 0, theta, psi, 0, 0, 0];
+
+
+    [~, statevector] = ode45(@(t,statevector) QuadrotorEOM(t,statevector, const, motor_forces),tspan,statevector_0);
+
+
+    figure()
+    plot3(statevector(:,1),statevector(:,2),statevector(:,3),'LineWidth',2);
+
+    grid on;
+    xlabel('x [m]');
+    ylabel('y [m]');
+    zlabel('z [m]');
+    title("3D Position Trajectory" + " psi: 0 deg" + " theta: " + string(phi) + " rad" + " motor force: " + string(f) + " N");
+    axis equal;
 end
 
 %1.4.2: yaw = 90
@@ -70,20 +84,24 @@ if(run_142)
     f = (const.m * const.g * cos(phi) - 25 * const.nu * sin(phi))/ 4; % N
     motor_forces = [f, f, f, f];
     statevector_0 = [0, 0, 0, 0, -5*cos(phi), 5*sin(phi), phi, 0, psi, 0, 0, 0];
+    
+
+
+    [~, statevector] = ode45(@(t,statevector) QuadrotorEOM(t,statevector, const, motor_forces),tspan,statevector_0);
+
+
+    figure()
+    plot3(statevector(:,1),statevector(:,2),statevector(:,3),'LineWidth',2);
+    
+    grid on;
+    xlabel('x [m]');
+    ylabel('y [m]');
+    zlabel('z [m]');
+    title("3D Position Trajectory" + " psi: 90 deg" + " phi: " + string(phi) + " rad" + " motor force: " + string(f) + " N");
+    axis equal;
 end
 
 [t, statevector] = ode45(@(t,statevector) QuadrotorEOM(t,statevector, const, motor_forces),tspan,statevector_0);
-
-
-
-
-
-figure()
-plot(t, statevector(:,3), "LineWidth",2);
-xlabel('time')
-ylabel('z position')
-
-
 
 
 
@@ -200,14 +218,7 @@ function PlotAircraftSim(time, aircraft_state_array, control_input_array,fig, co
     axis equal;
     view(3);
 end
-const = struct();
-const.g = 9.81; %m/s^2
-const.m = 0.068; %kg
-const.km = 0.0024; %N*m/(N)
-const.d = 0.06; %m
-const.nu = 1*10^(-3); %N/(m/s)^2
-const.mu = 2*10^(-6); %N*m/(rad/s)^2
-const.I = [5.8*10^(-5), 0, 0; 0, 7.2*10^(-5), 0; 0, 0, 1*10^(-4)]; %kg*m^2
+
 
 
 
