@@ -5,7 +5,7 @@ close all;
 %%section activation
 %part 1:
 run_141 = true;
-run_142 = false;
+run_142 = true;
 
 %% Part 1
 data=load('RSdata_nocontrol.mat');
@@ -38,7 +38,7 @@ const.km = 0.0024; %N*m/(N)
 const.d = 0.06; %m
 const.nu = 1*10^(-3); %N/(m/s)^2
 const.mu = 2*10^(-6); %N*m/(rad/s)^2
-const.I = [5.8*10^(-5), 0, 0; 0, 7.2*10^(-5), 0; 0, 0, 1*10^(-4)]; %kg*m^2
+const.I = [5.8*(10^(-5)), 0, 0; 0, 7.2*(10^(-5)), 0; 0, 0, 1*(10^(-4))]; %kg*m^2
 tspan = [0, 10]; %seconds
             % x y z, phi, theta, psi, u, v, w p, q, r
 %statevector_0 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -277,7 +277,7 @@ function var_dot = QuadrotorEOM(t, var, const, motor_forces)
 
     omega = [((Iy-Iz)/Ix)*q*r; ((Iz-Ix)/Iy)*p*r; ((Ix-Iy)/Iz)*p*q] + [1/Ix, 0, 0; 0, 1/Iy, 0; 0, 0, 1/Iz]*([Lc; Mc; Nc] + MdB);
 
-    var_dot = [pos_dot(1); pos_dot(2); pos_dot(3); v_e_dot(1); v_e_dot(2); v_e_dot(3); e_dot(1); e_dot(2); e_dot(3); omega(1); omega(2); omega(3)];
+    var_dot = [pos_dot(1); pos_dot(2); pos_dot(3); e_dot(1); e_dot(2); e_dot(3); v_e_dot(1); v_e_dot(2); v_e_dot(3); omega(1); omega(2); omega(3)];
 end
 
 function [Fc, Gc] = InnerLoopFeedback(var)
