@@ -4,8 +4,8 @@ close all;
 
 %%section activation
 %part 1:
-run_141 = false;
-run_142 = true;
+run_141 = true;
+run_142 = false;
 
 %% Part 1
 data=load('RSdata_nocontrol.mat');
@@ -40,7 +40,7 @@ const.nu = 1*10^(-3); %N/(m/s)^2
 const.mu = 2*10^(-6); %N*m/(rad/s)^2
 const.I = [5.8*10^(-5), 0, 0; 0, 7.2*10^(-5), 0; 0, 0, 1*10^(-4)]; %kg*m^2
 tspan = [0, 10]; %seconds
-            % x y z, u, v, w, phi, theta, psi, p, q, r
+            % x y z, phi, theta, psi, u, v, w p, q, r
 %statevector_0 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 %statevector_0 = [10, 20, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
@@ -57,7 +57,7 @@ if(run_141)
     
     f = (const.m * const.g * cos(theta) - 25 * const.nu * sin(theta))/ 4; % N
     motor_forces = [f, f, f, f];
-    statevector_0 = [0, 0, 0, 5*cos(theta), 0, 5*sin(theta), 0, theta, psi, 0, 0, 0];
+    statevector_0 = [0, 0, 0, 0, theta, psi, 5*cos(theta), 0, 5*sin(theta), 0, 0, 0];
 
 
     [~, statevector] = ode45(@(t,statevector) QuadrotorEOM(t,statevector, const, motor_forces),tspan,statevector_0);
@@ -70,20 +70,20 @@ if(run_141)
     xlabel('x [m]');
     ylabel('y [m]');
     zlabel('z [m]');
-    title("3D Position Trajectory" + " psi: 0 deg" + " theta: " + string(phi) + " rad" + " motor force: " + string(f) + " N");
+    title("3D Position Trajectory" + " psi: 0 deg" + " theta: " + string(theta) + " rad" + " motor force: " + string(f) + " N");
     axis equal;
 end
 
 %1.4.2: yaw = 90
 if(run_142)
     psi = 90; % deg
-    psi = psi * pi/180;
+    psi = psi * (pi/180);
     
     phi = atan((-25 *const.nu)/(const.m*const.g)); % rad
     
     f = (const.m * const.g * cos(phi) - 25 * const.nu * sin(phi))/ 4; % N
     motor_forces = [f, f, f, f];
-    statevector_0 = [0, 0, 0, 0, -5*cos(phi), 5*sin(phi), phi, 0, psi, 0, 0, 0];
+    statevector_0 = [0, 0, 0, phi, 0, psi, 0, -5*cos(phi), 5*sin(phi), 0, 0, 0];
     
 
 
@@ -132,7 +132,7 @@ function PlotAircraftSim(time, aircraft_state_array, control_input_array,fig, co
     plot(time, aircraft_state_array(4, :), col); hold on;
     xlabel('Time (s)');
     ylabel('Radians');
-    title('Euler Psi Angle');
+    title('Euler Phi Angle');
     subplot(3,1,2);
     plot(time, aircraft_state_array(5, :), col); hold on;
     xlabel('Time (s)');
@@ -142,7 +142,7 @@ function PlotAircraftSim(time, aircraft_state_array, control_input_array,fig, co
     plot(time, aircraft_state_array(6, :), col); hold on;
     xlabel('Time (s)');
     ylabel('Radians');
-    title('Euler Phi Angle');
+    title('Euler Psi Angle');
 
     figure(fig(3));
     subplot(3,1,1);
@@ -219,21 +219,17 @@ function PlotAircraftSim(time, aircraft_state_array, control_input_array,fig, co
     view(3);
 end
 
-
-
-
-
 function var_dot = QuadrotorEOM(t, var, const, motor_forces)
     %decompose
     x = var(1);
     y = var(2);
     z = var(3);
-    u = var(4);
-    v = var(5);
-    w = var(6);
-    phi = var(7);
-    theta = var(8);
-    psi = var(9);
+    u = var(7);
+    v = var(8);
+    w = var(9);
+    phi = var(4);
+    theta = var(5);
+    psi = var(6);
     p = var(10);
     q = var(11);
     r = var(12);
@@ -282,4 +278,9 @@ function var_dot = QuadrotorEOM(t, var, const, motor_forces)
     omega = [((Iy-Iz)/Ix)*q*r; ((Iz-Ix)/Iy)*p*r; ((Ix-Iy)/Iz)*p*q] + [1/Ix, 0, 0; 0, 1/Iy, 0; 0, 0, 1/Iz]*([Lc; Mc; Nc] + MdB);
 
     var_dot = [pos_dot(1); pos_dot(2); pos_dot(3); v_e_dot(1); v_e_dot(2); v_e_dot(3); e_dot(1); e_dot(2); e_dot(3); omega(1); omega(2); omega(3)];
+end
+
+function [Fc, Gc] = InnerLoopFeedback(var)
+    k_spin = 0;
+
 end
