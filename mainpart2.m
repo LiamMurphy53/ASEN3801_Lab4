@@ -66,7 +66,7 @@ tspan = [0 10];
 x0 = zeros(12,1);
 
 deg = @(x) x*pi/180;
-initalCons = { ...
+initalCons = {
     x0 + [0 0 0  deg(5) 0      0     0 0 0   0   0   0 ]';   % +roll
     x0 + [0 0 0  0      deg(5) 0     0 0 0   0   0   0 ]';   % +pitch
     x0 + [0 0 0  0      0      deg(5) 0 0 0  0   0   0 ]';   % +yaw
@@ -74,18 +74,15 @@ initalCons = { ...
     x0 + [0 0 0  0      0      0     0 0 0   0   0.1 0 ]';   % +q
     x0 + [0 0 0  0      0      0     0 0 0   0   0   0.1]'}; % +r
 
-figs0 = [1 2 3 4 5 6];
+figs = [1 2 3 4 5 6];
 
 %nonLinear
 fNL  = @(t,x) QuadrotorEOM(t, x, g, m, I, d, km, nu, mu, motor);
 
 % linear
 deltaFc = zeros(3,1); deltaGc = zeros(3,1);
-if exist('linearizedQuadrotorEOM','file')
-    fLIN = @(t,dx) linearizedQuadrotorEOM(t, dx, g, m, I, deltaFc, deltaGc);
-else
-    fLIN = @(t,dx) QuadrotorEOM_Linearized(t, dx, g, m, I, deltaFc, deltaGc);
-end
+
+fLIN = @(t,dx) QuadrotorEOM_Linearized(t, dx, g, m, I, deltaFc, deltaGc);
 
 Zc = -sum(motor);
 
@@ -102,7 +99,7 @@ for k = 1:numel(initalCons)
     uLIN = repmat([Zc;0;0;0], 1, numel(tLIN));
 
     
-    figs_case = figs0 + 6*(k-1);
+    figs_case = figs + 6*(k-1);
 
     
     PlotAircraftSim(tNL.',  xNL.',  uNL,  figs_case, 'r-');
@@ -129,4 +126,117 @@ for k = 1:numel(initalCons)
         plot3(ax3, xNL(:,1),  xNL(:,2),  xNL(:,3),  'r-',  'LineWidth',1.2); 
         plot3(ax3, xLIN(:,1), xLIN(:,2), xLIN(:,3), 'b--', 'LineWidth',1.2); 
     end
+end
+
+
+%% part 5 
+clear; close all; clc;
+
+
+g  = 9.81;  m  = 0.068;  d  = 0.060;  km = 0.0024;
+I  = diag([5.8e-5, 7.2e-5, 1.0e-4]);
+nu = 1e-3;  mu = 2e-6;
+
+
+tspan = [0 10];
+x0 = zeros(12,1);
+
+
+ICs = {
+    x0 + [zeros(9,1); 0.1; 0;   0];   % +0.1 rad/s p
+    x0 + [zeros(9,1); 0;   0.1; 0];   % +0.1 rad/s q
+    x0 + [zeros(9,1); 0;   0;   0.1]  % +0.1 rad/s r
+    };
+case_labels = {'Case D: +0.1 rad/s p', 'Case E: +0.1 rad/s q', 'Case F: +0.1 rad/s r'};
+
+
+% Nonlinear
+motor_hover = (m*g/4) * ones(4,1);
+fNL = @(t,x) QuadrotorEOM(t, x, g, m, I, d, km, nu, mu, motor_hover);
+
+% Linearized
+deltaFc = zeros(3,1); deltaGc = zeros(3,1);
+if exist('linearizedQuadrotorEOM','file')
+    fLIN = @(t,dx) linearizedQuadrotorEOM(t, dx, g, m, I, deltaFc, deltaGc);
+else
+    fLIN = @(t,dx) QuadrotorEOM_Linearized(t, dx, g, m, I, deltaFc, deltaGc);
+end
+
+% Nonlinear with rate feedback
+fCTRL = @(t,x) QuadrotorEOMwithRateFeedback(t, x, g, m, I, nu, mu);
+
+
+
+figs = [1 2 3 4 5 6];
+
+for k = 1:numel(ICs)
+    x_ic  = ICs{k};
+    dx_ic = x_ic;               
+
+
+    % Nonlinear
+    [tNL,  xNL]    = ode45(fNL,   tspan, x_ic);
+
+    % Linearized (uncontrolled)
+    [tLIN, dxLIN]  = ode45(fLIN,  tspan, dx_ic);
+    xLIN = dxLIN;                 
+
+    % Nonlinear (feedback-controlled)
+    [tCL,  xCL]    = ode45(fCTRL, tspan, x_ic);
+
+   
+    Zc0    = -m*g;
+    uNL    = repmat([Zc0; 0; 0; 0], 1, numel(tNL));
+    uLIN   = repmat([Zc0; 0; 0; 0], 1, numel(tLIN));
+
+    
+    Ncl = numel(tCL);
+    Fc_hist = zeros(3,Ncl);  Gc_hist = zeros(3,Ncl);  mot_hist = zeros(4,Ncl);
+    for i = 1:Ncl
+        xi = xCL(i,:).';
+        [Fc, Gc] = RotationDerivativeFeedback(xi, m, g);
+        mot_hist(:,i) = ComputeMotorForces(Fc, Gc, d, km);
+        Fc_hist(:,i)  = Fc;
+        Gc_hist(:,i)  = Gc;
+    end
+    uCL = [Fc_hist(3,:); Gc_hist(1,:); Gc_hist(2,:); Gc_hist(3,:)];
+
+
+    figs_case = figs + 6*(k-1);
+
+  
+    PlotAircraftSim(tNL.',  xNL.',  uNL,  figs_case, 'k-');
+
+  
+    PlotAircraftSim(tLIN.', xLIN.', uLIN, figs_case, 'b--');
+
+    
+    PlotAircraftSim(tCL.',  xCL.',  uCL,  figs_case, 'r-');
+
+    
+    
+    for fid = figs_case
+        fh = figure(fid);
+        axs = findall(fh,'Type','axes');
+        for ax = axs.'
+            
+            set(findobj(ax,'-property','HandleVisibility'),'HandleVisibility','off');
+            hold(ax,'on');
+           
+            plot(ax, NaN, NaN, 'k-',  'LineWidth',1.4, 'DisplayName','Nonlinear');
+            plot(ax, NaN, NaN, 'b--', 'LineWidth',1.4, 'DisplayName','Linearized');
+            plot(ax, NaN, NaN, 'r-',  'LineWidth',1.4, 'DisplayName','Nonlinear + Feedback');
+            legend(ax,'Location','best'); legend(ax,'boxoff');
+        end
+    end
+
+    
+    fh3 = figure(figs_case(6));
+    ax3 = findall(fh3,'Type','axes'); if ~isempty(ax3), ax3 = ax3(1); else, ax3 = gca; end
+    hold(ax3,'on');
+    plot3(ax3, xNL(:,1),  xNL(:,2),  xNL(:,3),  'k-',  'LineWidth',1.2);
+    plot3(ax3, xLIN(:,1), xLIN(:,2), xLIN(:,3), 'b--', 'LineWidth',1.2);
+    plot3(ax3, xCL(:,1),  xCL(:,2),  xCL(:,3),  'r-',  'LineWidth',1.2);
+
+    
 end
