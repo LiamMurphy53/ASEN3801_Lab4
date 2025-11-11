@@ -1,0 +1,60 @@
+
+clear; close all; clc;
+
+
+g  = 9.81;                 
+m  = 0.068;               
+d  = 0.060;               
+km = 0.0024;              
+I  = diag([5.8e-5, 7.2e-5, 1.0e-4]);  
+nu = 1e-3;                 % (not used directly in 2.1, keep for signature)
+mu = 2e-6;                 % (not used directly in 2.1)
+
+% Hover motor forces (constant inputs)
+f_hover = (m*g/4) * ones(4,1);     % 4×1
+
+% Time and trim state
+tspan = [0 10];
+x0 = zeros(12,1);
+
+% Six initial-condition perturbations
+deg = @(x) x*pi/180;
+ICs = { ...
+    x0 + [0 0 0  deg(5) 0      0   0 0 0  0   0   0 ]';   % +roll
+    x0 + [0 0 0  0      deg(5) 0   0 0 0  0   0   0 ]';   % +pitch
+    x0 + [0 0 0  0      0      deg(5) 0 0 0  0   0   0 ]';% +yaw
+    x0 + [0 0 0  0      0      0   0 0 0  0.1 0   0 ]';   % +p
+    x0 + [0 0 0  0      0      0   0 0 0  0   0.1 0 ]';   % +q
+    x0 + [0 0 0  0      0      0   0 0 0  0   0   0.1]'}; % +r
+
+cols = {'-g','-r','-b','-m','-c','-k'};     % simple colors
+figs = [1 2 3 4 5 6];
+
+% ODE function handle (uses your provided QuadrotorEOM)
+f = @(t,x) QuadrotorEOM(t, x, g, m, I, d, km, nu, mu, f_hover);
+
+for k = 1:numel(ICs)
+    x_ic = ICs{k};
+    [t, x] = ode45(f, tspan, x_ic);
+
+    % control history (constant hover: Zc=-mg, and zero moments)
+    Zc = -sum(f_hover);  Lc = 0;  Mc = 0;  Nc = 0;
+    u_hist = repmat([Zc; Lc; Mc; Nc], 1, numel(t));
+
+    % Plot with your provided PlotAircraftSim (expects rows×N and row time)
+    PlotAircraftSim(t.', x.', u_hist, figs, cols{k});
+end
+
+%% after the loop ends
+labels = { ...
+    'Case A: +5° Roll', ...
+    'Case B: +5° Pitch', ...
+    'Case C: +5° Yaw', ...
+    'Case D: +0.1 rad/s p', ...
+    'Case E: +0.1 rad/s q', ...
+    'Case F: +0.1 rad/s r' };
+
+for j = 1:6
+    figure(j)
+    legend(labels, 'Location', 'best');
+end
