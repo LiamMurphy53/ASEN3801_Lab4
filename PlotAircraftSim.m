@@ -45,7 +45,7 @@ function PlotAircraftSim(time, aircraft_state_array, control_input_array,fig, co
     ylabel('Velocity (m/s)');
     title('Y Velocity');
     subplot(3,1,3);
-    plot(time, aircraft_state_array(9, :), col); hold on;
+    plot(time, -aircraft_state_array(9, :), col); hold on;
     xlabel('Time (s)');
     ylabel('Velocity (m/s)');
     title('Z Velocity');
@@ -106,4 +106,5 @@ function PlotAircraftSim(time, aircraft_state_array, control_input_array,fig, co
     title('3D Position Trajectory');
     axis equal;
     view(3);
+    set(gca,'ZDir','reverse');
 end
